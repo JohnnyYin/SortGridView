@@ -1,5 +1,6 @@
 package com.johnnyyin.sortgridview.library;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.text.TextUtils;
@@ -15,7 +16,7 @@ import android.widget.GridView;
  */
 public class SortGridView extends GridView {
     public static final String TAG = "SGV";
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private Transformation mChildTransformation;
     private ChildAnimationController mChildAnimationController;
@@ -38,15 +39,16 @@ public class SortGridView extends GridView {
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean result;
         int position = mChildAnimationController != null ? mChildAnimationController.getPositionFromTag(child) : -1;
-        Animation childAnimation;
         int restoreTo = -1;
+        Animation childAnimation;
         if (position >= 0 && (childAnimation = mChildAnimationController.getChildAnimation(position)) != null) {
             restoreTo = canvas.save();
             drawChildAnimation(canvas, child, drawingTime, childAnimation, position);
         }
         result = super.drawChild(canvas, child, drawingTime);
-        canvas.restoreToCount(restoreTo);
-        log("drawChild:" + child.getTag());
+        if (restoreTo >= 0) {
+            canvas.restoreToCount(restoreTo);
+        }
         return result;
     }
 
@@ -63,13 +65,13 @@ public class SortGridView extends GridView {
         }
 
         final Transformation t = getChildTransformation();
-        boolean more = a.getTransformation(drawingTime, t, 1f);
+        boolean more = a.getTransformation(drawingTime, t);
         if (a.willChangeTransformationMatrix()) {
             canvas.concat(t.getMatrix());
         }
 
         // alpha begin
-        if (child.getLayerType() == LAYER_TYPE_NONE) {
+        if (getLayerType(child) == LAYER_TYPE_NONE) {
             float alpha = 1;
             float transformAlpha = t.getAlpha();
             if (transformAlpha < 1) {
@@ -77,9 +79,7 @@ public class SortGridView extends GridView {
             }
             if (alpha < 1) {
                 int layerFlags = Canvas.HAS_ALPHA_LAYER_SAVE_FLAG;
-                if (getClipChildren()) {
-                    layerFlags |= Canvas.CLIP_TO_LAYER_SAVE_FLAG;
-                }
+                layerFlags |= Canvas.CLIP_TO_LAYER_SAVE_FLAG;
                 int scrollX = child.getScrollX();
                 int scrollY = child.getScrollY();
                 final int multipliedAlpha = (int) (255 * alpha);
@@ -97,6 +97,14 @@ public class SortGridView extends GridView {
                 onAnimationEnd();
             }
         }
+    }
+
+    @SuppressLint("NewApi")
+    private int getLayerType(View view) {
+        if (android.os.Build.VERSION.SDK_INT >= 11) {
+            return view.getLayerType();
+        }
+        return LAYER_TYPE_NONE;
     }
 
     private Transformation getChildTransformation() {

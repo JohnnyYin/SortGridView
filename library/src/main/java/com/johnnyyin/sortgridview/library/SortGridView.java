@@ -61,6 +61,7 @@ public class SortGridView extends GridView {
             if (!mChildAnimating) {
                 mChildAnimating = true;
                 onAnimationStart();
+                mChildAnimationController.onAnimationStart();
             }
         }
 
@@ -95,6 +96,7 @@ public class SortGridView extends GridView {
             if (mChildAnimationController.isEmpty()) {
                 mChildAnimating = false;
                 onAnimationEnd();
+                mChildAnimationController.onAnimationEnd();
             }
         }
     }

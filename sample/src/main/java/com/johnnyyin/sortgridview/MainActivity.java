@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.view.animation.AnticipateOvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
@@ -17,6 +18,7 @@ import com.johnnyyin.sortgridview.library.SortGridView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class MainActivity extends Activity {
     private SortGridView mSortGridView;
@@ -38,26 +40,56 @@ public class MainActivity extends Activity {
         mAdapter = new SortGridViewAdapter(data);
         mSortGridView.setChildAnimationController(new ChildAnimationController.Builder().numColumns(3)
                 .animationDuration(1000).animationType(ChildAnimationController.ANIMATION_TYPE_TRANSLATE)
-                .interpolator(new AnticipateOvershootInterpolator(1.0f)).build());
+                .interpolator(new AnticipateOvershootInterpolator(1.0f))
+                .animationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                        log("animation start");
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        log("animation end");
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                }).build());
         mSortGridView.setAdapter(mAdapter);
         mSortGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                Random random = new Random();
-//                int count = 0;
-//                while (count++ < 8) {
-//                    changeChildPos(random.nextInt(12), random.nextInt(12));
-//                }
                 if (!mSortGridView.canChangeChildPos()) {
                     Toast.makeText(MainActivity.this, "SortGridView is animating.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                changeChildPos(0, 5);
-                changeChildPos(2, 3);
-                changeChildPos(6, 10);
-                changeChildPos(7, 8);
-                changeChildPos(9, 1);
-                changeChildPos(4, 11);
+                Random random = new Random();
+                int count = 0;
+                int max = 30;
+                ArrayList<Integer> list = new ArrayList<Integer>();
+                while (count < max / 2) {
+                    int oldPos;
+                    do {
+                        oldPos = random.nextInt(max);
+                    } while (list.contains(oldPos));
+                    list.add(oldPos);
+                    int newPos;
+                    do {
+                        newPos = random.nextInt(max);
+                    } while (list.contains(newPos));
+                    list.add(newPos);
+                    changeChildPos(oldPos, newPos);
+                    count++;
+                }
+
+//                changeChildPos(0, 5);
+//                changeChildPos(2, 3);
+//                changeChildPos(6, 10);
+//                changeChildPos(7, 8);
+//                changeChildPos(9, 1);
+//                changeChildPos(4, 11);
                 mAdapter.notifyDataSetChanged();
             }
         });

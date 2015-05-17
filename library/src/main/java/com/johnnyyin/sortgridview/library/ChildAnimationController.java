@@ -20,6 +20,7 @@ public final class ChildAnimationController {
         private int animationType;
         private long startOffset;
         private Interpolator interpolator;
+        private Animation.AnimationListener animationListener;
 
         public Builder animationDuration(int animationDuration) {
             this.animationDuration = animationDuration;
@@ -38,6 +39,11 @@ public final class ChildAnimationController {
 
         public Builder interpolator(Interpolator interpolator) {
             this.interpolator = interpolator;
+            return this;
+        }
+
+        public Builder animationListener(Animation.AnimationListener animationListener) {
+            this.animationListener = animationListener;
             return this;
         }
 
@@ -85,6 +91,7 @@ public final class ChildAnimationController {
     private final int mAnimationDuration;
     private final long mStartOffset;
     private Interpolator mInterpolator;
+    private Animation.AnimationListener mAnimationListener;
 
     private ChildAnimationController(Builder builder) {
         this.mNumColumns = builder.numColumns;
@@ -93,6 +100,7 @@ public final class ChildAnimationController {
         this.mAnimationType = builder.animationType;
         this.mStartOffset = builder.startOffset;
         this.mInterpolator = builder.interpolator;
+        this.mAnimationListener = builder.animationListener;
     }
 
     public void changePos(int oldPos, int newPos) {
@@ -170,5 +178,17 @@ public final class ChildAnimationController {
 
     public void clearAllAnimation() {
         mChildAnimationMap.clear();
+    }
+
+    public void onAnimationEnd() {
+        if (mAnimationListener != null) {
+            mAnimationListener.onAnimationEnd(null);
+        }
+    }
+
+    public void onAnimationStart() {
+        if (mAnimationListener != null) {
+            mAnimationListener.onAnimationStart(null);
+        }
     }
 }

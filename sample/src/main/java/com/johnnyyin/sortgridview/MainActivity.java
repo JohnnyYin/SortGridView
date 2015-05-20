@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.johnnyyin.sortgridview.library.ChildAnimationController;
+import com.johnnyyin.sortgridview.library.ChildAnimationControllerBase;
 import com.johnnyyin.sortgridview.library.SortGridView;
 
 import java.util.ArrayList;
@@ -38,8 +39,11 @@ public class MainActivity extends Activity {
             data.add("item:" + i);
         }
         mAdapter = new SortGridViewAdapter(data);
-        mSortGridView.setChildAnimationController(new ChildAnimationController.Builder().numColumns(3)
-                .animationDuration(1000).animationType(ChildAnimationController.ANIMATION_TYPE_TRANSLATE)
+        mSortGridView.setChildAnimationController(new ChildAnimationController.Builder()
+                .sortGridView(mSortGridView)
+                .numColumns(3)
+                .animationDuration(1000)
+                .animationType(ChildAnimationControllerBase.ANIMATION_TYPE_TRANSLATE)
                 .interpolator(new AnticipateOvershootInterpolator(1.0f))
                 .animationListener(new Animation.AnimationListener() {
                     @Override

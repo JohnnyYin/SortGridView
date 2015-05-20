@@ -19,7 +19,7 @@ public class SortGridView extends GridView {
     private static final boolean DEBUG = false;
 
     private Transformation mChildTransformation;
-    private ChildAnimationController mChildAnimationController;
+    private ChildAnimationControllerBase mChildAnimationController;
     private int mNumColumns;
     private boolean mChildAnimating;
 
@@ -134,7 +134,7 @@ public class SortGridView extends GridView {
         mChildAnimating = false;
     }
 
-    public void setChildAnimationController(ChildAnimationController childAnimationController) {
+    public void setChildAnimationController(ChildAnimationControllerBase childAnimationController) {
         this.mChildAnimationController = childAnimationController;
     }
 
@@ -148,7 +148,7 @@ public class SortGridView extends GridView {
             return false;
         }
         if (mChildAnimationController == null) {
-            mChildAnimationController = new ChildAnimationController.Builder().numColumns(mNumColumns).build();
+            mChildAnimationController = new ChildAnimationControllerBase.Builder().numColumns(mNumColumns).build();
         }
         mChildAnimationController.changePos(oldPos, newPos);
         return true;

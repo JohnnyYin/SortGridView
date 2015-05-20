@@ -1,117 +1,41 @@
 package com.johnnyyin.sortgridview.library;
 
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.Interpolator;
 import android.view.animation.TranslateAnimation;
 
-import java.util.HashMap;
-import java.util.Map;
+public class ChildAnimationController extends ChildAnimationControllerBase {
 
-public final class ChildAnimationController {
+    public static class Builder extends ChildAnimationControllerBase.Builder {
+        protected SortGridView sortGridView;
 
-    public static class Builder {
-        private static final int DEFAULT_ANIMATION_DURATION = 1000;
-
-        private int animationDuration;
-        private int numColumns;
-        private int positionTag;
-        private int animationType;
-        private long startOffset;
-        private Interpolator interpolator;
-        private Animation.AnimationListener animationListener;
-
-        public Builder animationDuration(int animationDuration) {
-            this.animationDuration = animationDuration;
+        public Builder sortGridView(SortGridView sortGridView) {
+            this.sortGridView = sortGridView;
             return this;
         }
 
-        public Builder animationType(int animationType) {
-            this.animationType = animationType;
-            return this;
+        @Override
+        protected void checkArgument() {
+            super.checkArgument();
+            if (sortGridView == null) {
+                throw new IllegalArgumentException("sortGridView is null.");
+            }
         }
 
-        public Builder startOffset(long startOffset) {
-            this.startOffset = startOffset;
-            return this;
-        }
-
-        public Builder interpolator(Interpolator interpolator) {
-            this.interpolator = interpolator;
-            return this;
-        }
-
-        public Builder animationListener(Animation.AnimationListener animationListener) {
-            this.animationListener = animationListener;
-            return this;
-        }
-
-        public Builder numColumns(int numColumns) {
-            this.numColumns = numColumns;
-            return this;
-        }
-
-        public Builder positionTag(int positionTag) {
-            this.positionTag = positionTag;
-            return this;
-        }
-
+        @Override
         public ChildAnimationController build() {
-            if (animationDuration <= 0) {
-                animationDuration = DEFAULT_ANIMATION_DURATION;
-            }
-            if (animationType <= 0) {
-                animationType = ANIMATION_TYPE_TRANSLATE;
-            }
-            if (numColumns <= 0) {
-                throw new IllegalArgumentException("numColumns can't less than or equal to zero.");
-            }
+            checkArgument();
             return new ChildAnimationController(this);
         }
     }
 
-    private class AnimationInfo {
-        int newPos;
-        Animation animation;
+    protected SortGridView mSortGridView;
 
-        public AnimationInfo(int newPos, Animation animation) {
-            this.newPos = newPos;
-            this.animation = animation;
+    private ChildAnimationController(ChildAnimationControllerBase.Builder builder) {
+        super(builder);
+        if (builder instanceof Builder) {
+            mSortGridView = ((Builder) builder).sortGridView;
         }
-    }
-
-    public static final int ANIMATION_TYPE_TRANSLATE = 1;
-    public static final int ANIMATION_TYPE_ALPHA = 2;
-    private Map<Integer, AnimationInfo> mChildAnimationMap = new HashMap<Integer, AnimationInfo>();
-
-    private final int mNumColumns;
-    private final int mPositionTag;
-    private final int mAnimationType;
-    private final int mAnimationDuration;
-    private final long mStartOffset;
-    private Interpolator mInterpolator;
-    private Animation.AnimationListener mAnimationListener;
-
-    private ChildAnimationController(Builder builder) {
-        this.mNumColumns = builder.numColumns;
-        this.mPositionTag = builder.positionTag;
-        this.mAnimationDuration = builder.animationDuration;
-        this.mAnimationType = builder.animationType;
-        this.mStartOffset = builder.startOffset;
-        this.mInterpolator = builder.interpolator;
-        this.mAnimationListener = builder.animationListener;
-    }
-
-    public void changePos(int oldPos, int newPos) {
-        if (oldPos == newPos) {
-            return;
-        }
-        if (mChildAnimationMap.containsKey(oldPos) || mChildAnimationMap.containsKey(newPos)) {
-            return;
-        }
-        mChildAnimationMap.put(oldPos, new AnimationInfo(newPos, generateChildAnimation(oldPos, newPos)));
-        mChildAnimationMap.put(newPos, new AnimationInfo(oldPos, generateChildAnimation(newPos, oldPos)));
     }
 
     /**
@@ -119,76 +43,37 @@ public final class ChildAnimationController {
      *
      * @param oldPos
      * @param newPos
-     * @return
      */
+    @Override
     protected Animation generateChildAnimation(int oldPos, int newPos) {
         Animation animation;
         switch (mAnimationType) {
             case ANIMATION_TYPE_TRANSLATE:
-                int oldPosColumn = oldPos % mNumColumns;
-                int newPosColumn = newPos % mNumColumns;
-                int oldPosRow = oldPos / mNumColumns;
-                int newPosRow = newPos / mNumColumns;
-                int columnOffset = newPosColumn - oldPosColumn;
-                int rowOffset = newPosRow - oldPosRow;
-                TranslateAnimation translateAnimation = new TranslateAnimation(Animation.RELATIVE_TO_SELF, columnOffset, Animation.RELATIVE_TO_SELF, 0f,
-                        Animation.RELATIVE_TO_SELF, rowOffset, Animation.RELATIVE_TO_SELF, 0f);
+                int firstPosition = mSortGridView.getFirstVisiblePosition();
+
+                View newPosView = mSortGridView.getChildAt(newPos - firstPosition);
+                View oldPosView = mSortGridView.getChildAt(oldPos - firstPosition);
+
+                if (newPosView == null || oldPosView == null) {
+                    return null;
+//                    throw new IllegalArgumentException("position is invisible.");
+                }
+
+                TranslateAnimation translateAnimation = new TranslateAnimation(newPosView.getLeft() - oldPosView.getLeft(), 0, newPosView.getTop() - oldPosView.getTop(), 0);
                 animation = translateAnimation;
+                animation.setDuration(mAnimationDuration);
+                if (mStartOffset > 0)
+                    animation.setStartOffset(mStartOffset);
+                if (mInterpolator != null)
+                    animation.setInterpolator(mInterpolator);
                 break;
             case ANIMATION_TYPE_ALPHA:
-                AlphaAnimation alphaAnimation = new AlphaAnimation(0.0f, 1.0f);
-                animation = alphaAnimation;
+                animation = super.generateChildAnimation(oldPos, newPos);
                 break;
             default:
                 throw new IllegalStateException("please assign animation type.");
         }
-        animation.setDuration(mAnimationDuration);
-        if (mStartOffset > 0)
-            animation.setStartOffset(mStartOffset);
-        if (mInterpolator != null)
-            animation.setInterpolator(mInterpolator);
         return animation;
     }
 
-    public Animation getChildAnimation(int pos) {
-        AnimationInfo animationInfo = mChildAnimationMap.get(pos);
-        if (animationInfo == null) {
-            return null;
-        }
-        return animationInfo.animation;
-    }
-
-    public void removeChildAnimation(int pos) {
-        mChildAnimationMap.remove(pos);
-    }
-
-    public int getPositionFromTag(View child) {
-        int position = -1;
-        if (child == null) {
-            return position;
-        }
-        Object tag = mPositionTag > 0 ? child.getTag(mPositionTag) : child.getTag();
-        position = Integer.class.isInstance(tag) ? (Integer) tag : -1;
-        return position;
-    }
-
-    public boolean isEmpty() {
-        return mChildAnimationMap.isEmpty();
-    }
-
-    public void clearAllAnimation() {
-        mChildAnimationMap.clear();
-    }
-
-    public void onAnimationEnd() {
-        if (mAnimationListener != null) {
-            mAnimationListener.onAnimationEnd(null);
-        }
-    }
-
-    public void onAnimationStart() {
-        if (mAnimationListener != null) {
-            mAnimationListener.onAnimationStart(null);
-        }
-    }
 }

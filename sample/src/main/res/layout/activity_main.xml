@@ -8,6 +8,8 @@
         android:id="@+id/sort_grid_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:numColumns="3" />
+        android:horizontalSpacing="10dp"
+        android:numColumns="3"
+        android:verticalSpacing="10dp" />
 
 </RelativeLayout>

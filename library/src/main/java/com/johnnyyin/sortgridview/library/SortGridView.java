@@ -20,7 +20,6 @@ public class SortGridView extends GridView {
 
     private Transformation mChildTransformation;
     private ChildAnimationControllerBase mChildAnimationController;
-    private int mNumColumns;
     private boolean mChildAnimating;
 
     public SortGridView(Context context) {
@@ -117,45 +116,26 @@ public class SortGridView extends GridView {
     }
 
     @Override
-    public void setNumColumns(int numColumns) {
-        super.setNumColumns(numColumns);
-        mNumColumns = numColumns;
-    }
-
-    @Override
     public void clearAnimation() {
-        super.clearAnimation();
         if (mChildAnimationController != null) {
             mChildAnimationController.clearAllAnimation();
         }
         if (mChildTransformation != null) {
             mChildTransformation.clear();
         }
+        super.clearAnimation();
         mChildAnimating = false;
     }
 
     public void setChildAnimationController(ChildAnimationControllerBase childAnimationController) {
+        if (isChildAnimating()) {
+            clearAnimation();
+        }
         this.mChildAnimationController = childAnimationController;
     }
 
-    public boolean changeChildPos(int oldPos, int newPos) {
-        if (!canChangeChildPos()) {
-            throw new IllegalStateException("can't change child position.");
-        }
-        int firstPosition = getFirstVisiblePosition();
-        int lastPosition = getLastVisiblePosition();
-        if (newPos < firstPosition || newPos > lastPosition || oldPos < firstPosition || oldPos > lastPosition) {
-            return false;
-        }
-        if (mChildAnimationController == null) {
-            mChildAnimationController = new ChildAnimationControllerBase.Builder().numColumns(mNumColumns).build();
-        }
-        mChildAnimationController.changePos(oldPos, newPos);
-        return true;
-    }
-
-    public boolean canChangeChildPos() {
-        return !mChildAnimating;
+    public boolean isChildAnimating() {
+        return mChildAnimating;
     }
 
     private void log(String log) {

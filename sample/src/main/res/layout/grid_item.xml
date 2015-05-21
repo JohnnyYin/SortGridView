@@ -7,7 +7,7 @@
     <TextView
         android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="42dp"
         android:background="#ff0099cc"
         android:gravity="center" />
 </LinearLayout>

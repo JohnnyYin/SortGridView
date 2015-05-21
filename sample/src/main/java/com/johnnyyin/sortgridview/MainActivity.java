@@ -12,11 +12,11 @@ import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.johnnyyin.sortgridview.library.AbsoluteExchangeChildAnimationController;
 import com.johnnyyin.sortgridview.library.AlphaChildAnimationController;
 import com.johnnyyin.sortgridview.library.AnimationInfo;
+import com.johnnyyin.sortgridview.library.ChildAnimationControllerBase;
 import com.johnnyyin.sortgridview.library.ExchangeChildAnimationController;
 import com.johnnyyin.sortgridview.library.SortGridView;
 import com.johnnyyin.sortgridview.library.WaterFallChildAnimationController;
@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
     private AbsoluteExchangeChildAnimationController mAbsoluteExchangeChildAnimationController;
     private AlphaChildAnimationController mAlphaChildAnimationController;
     private int mNumColumns;
+    private long mBaseDuration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +45,7 @@ public class MainActivity extends Activity {
 
     private void initData() {
         mNumColumns = 3;
-        int baseDuration = 600;
+        mBaseDuration = 600;
         Animation.AnimationListener animationListener = new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -64,13 +65,13 @@ public class MainActivity extends Activity {
         Interpolator interpolator = new AnticipateOvershootInterpolator(1.0f);
         mExchangeChildAnimationController = new ExchangeChildAnimationController.Builder()
                 .numColumns(mNumColumns)
-                .animationDuration(baseDuration)
+                .duration(mBaseDuration)
                 .interpolator(interpolator)
                 .animationListener(animationListener).build();
         mAbsoluteExchangeChildAnimationController = new AbsoluteExchangeChildAnimationController.Builder()
                 .sortGridView(mSortGridView)
                 .numColumns(mNumColumns)
-                .animationDuration(baseDuration)
+                .duration(mBaseDuration)
                 .interpolator(interpolator)
                 .animationListener(animationListener).build();
         mWaterFallChildAnimationController = new WaterFallChildAnimationController.Builder()
@@ -80,11 +81,12 @@ public class MainActivity extends Activity {
                 .animationListener(animationListener).build();
         mAlphaChildAnimationController = new AlphaChildAnimationController.Builder()
                 .numColumns(mNumColumns)
+                .duration(mBaseDuration)
                 .animationListener(animationListener).build();
 
-        List<String> data = new ArrayList<String>();
+        List<Data> data = new ArrayList<Data>();
         for (int i = 0; i < 99; i++) {
-            data.add("item:" + i);
+            data.add(new Data(i, "item:" + i));
         }
         mAdapter = new SortGridViewAdapter(data);
         mSortGridView.setClipToPadding(false);
@@ -95,52 +97,62 @@ public class MainActivity extends Activity {
                 if (mSortGridView.isChildAnimating()) {
                     mSortGridView.clearAnimation();
                 }
-                int max = mSortGridView.getLastVisiblePosition() + 1;
+                int firstVisible = mSortGridView.getFirstVisiblePosition();
+                int max = mSortGridView.getLastVisiblePosition() + 1 - firstVisible;
                 Random random = new Random();
-                switch (position % 4) {
-                    case 0:
-                        mSortGridView.setChildAnimationController(mAbsoluteExchangeChildAnimationController);
+                ChildAnimationControllerBase controller;
+                switch (position % 5) {
+                    case 0: {
+                        controller = mAbsoluteExchangeChildAnimationController;
                         int count = 0;
                         ArrayList<Integer> list = new ArrayList<Integer>();
                         while (count < max / 2) {
                             int oldPos;
                             do {
-                                oldPos = random.nextInt(max);
+                                oldPos = firstVisible + random.nextInt(max);
                             } while (list.contains(oldPos));
                             list.add(oldPos);
                             int newPos;
                             do {
-                                newPos = random.nextInt(max);
+                                newPos = firstVisible + random.nextInt(max);
                             } while (list.contains(newPos));
                             list.add(newPos);
-                            testExchangeAnimation(mAbsoluteExchangeChildAnimationController, oldPos, newPos, 0);
+                            testExchangeAnimation((ExchangeChildAnimationController) controller, oldPos, newPos, 0);
                             count++;
                         }
                         break;
-                    case 1:
-                        mSortGridView.setChildAnimationController(mWaterFallChildAnimationController);
+                    }
+                    case 1: {
+                        controller = mWaterFallChildAnimationController;
                         for (int i = 0; i < max; i++) {
-                            testWaterFallAnimation(mWaterFallChildAnimationController, i, ((max - 1 - i) / 3) * 50);
+                            testWaterFallAnimation((WaterFallChildAnimationController) controller, i + firstVisible, ((max - 1 - i) / 3) * 50);
                         }
                         break;
-                    case 2:
-                        ExchangeChildAnimationController controller = mAbsoluteExchangeChildAnimationController;
-//                        ExchangeChildAnimationController controller = mExchangeChildAnimationController;
-                        mSortGridView.setChildAnimationController(controller);
-                        testExchangeAnimation2(controller, 0, 1, 0);
-                        testExchangeAnimation2(controller, 1, 2, 0);
-                        testExchangeAnimation2(controller, 2, 3, 0);
-                        testExchangeAnimation2(controller, 3, 4, 0);
-                        testExchangeAnimation2(controller, 4, 5, 0);
-                        testExchangeAnimation2(controller, 5, 0, 0);
+                    }
+                    case 2: {
+                        controller = mAbsoluteExchangeChildAnimationController;
+                        //controller = mExchangeChildAnimationController;
+                        List<Data> data = new ArrayList<Data>(mAdapter.getData());
+                        data.add(firstVisible, data.remove(firstVisible + max - 1));
+                        testExchangeAnimation2((ExchangeChildAnimationController) controller, data, firstVisible, max);
                         break;
-                    case 3:
-                        mSortGridView.setChildAnimationController(mAlphaChildAnimationController);
+                    }
+                    case 3: {
+                        controller = mAlphaChildAnimationController;
                         for (int i = 0; i < max; i++) {
-                            testAlphaAnimation(mAlphaChildAnimationController, i, i * 60);
+                            testAlphaAnimation((AlphaChildAnimationController) controller, firstVisible + i, i * 20);
                         }
                         break;
+                    }
+                    case 4: {
+                        controller = mAbsoluteExchangeChildAnimationController;
+                        testExchangeAnimation3((ExchangeChildAnimationController) controller, firstVisible, max);
+                        break;
+                    }
+                    default:
+                        return;
                 }
+                mSortGridView.setChildAnimationController(controller);
                 mAdapter.notifyDataSetChanged();
             }
         });
@@ -163,14 +175,29 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    public boolean testExchangeAnimation2(ExchangeChildAnimationController controller, int pos1, int pos2, long startOffset) {
-        mAdapter.changeChildPos(pos1, pos2);
-        int firstPosition = mSortGridView.getFirstVisiblePosition();
-        int lastPosition = mSortGridView.getLastVisiblePosition();
-        if (pos2 < firstPosition || pos2 > lastPosition || pos1 < firstPosition || pos1 > lastPosition) {
-            return false;
+    public boolean testExchangeAnimation2(ExchangeChildAnimationController controller, List<Data> data, int offset, int size) {
+        int changeCount = 0;
+        List<Data> oldData = mAdapter.getData();
+        if (controller != null && oldData != null && !oldData.isEmpty() && data != null && !data.isEmpty()) {
+            for (int pos = 0; pos < size; pos++) {
+                int realPos = pos + offset;
+                int oldPos = oldData.indexOf(data.get(realPos));
+                if (oldPos != pos) {
+                    controller.setChildAnimation(realPos, new ExchangeChildAnimationController.ExchangeAnimationInfo(oldPos, null, changeCount++ * 20));
+                }
+            }
         }
-        controller.setChildAnimation(pos2, new ExchangeChildAnimationController.ExchangeAnimationInfo(pos1, null, startOffset));
+        mAdapter.setData(data);
+        return true;
+    }
+
+    public boolean testExchangeAnimation3(ExchangeChildAnimationController controller, int offset, int size) {
+        if (controller != null) {
+            for (int pos = 0; pos < size; pos++) {
+                int realPos = pos + offset;
+                controller.setChildAnimation(realPos, new ExchangeChildAnimationController.ExchangeAnimationInfo(offset, null, pos * 20));
+            }
+        }
         return true;
     }
 
@@ -184,11 +211,31 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    private class SortGridViewAdapter extends BaseAdapter {
-        private List<String> mData;
+    private class Data {
+        int id;
+        String text;
 
-        public SortGridViewAdapter(List<String> data) {
-            this.mData = data;
+        public Data(int id, String text) {
+            this.id = id;
+            this.text = text;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof Data)
+                return ((Data) o).id == id;
+            return false;
+        }
+    }
+
+    private class SortGridViewAdapter extends BaseAdapter {
+
+        private List<Data> mData;
+
+        public SortGridViewAdapter(List<Data> data) {
+            setData(data);
         }
 
         @Override
@@ -197,7 +244,7 @@ public class MainActivity extends Activity {
         }
 
         @Override
-        public String getItem(int position) {
+        public Data getItem(int position) {
             if (position < 0 || position >= mData.size()) {
                 return null;
             }
@@ -214,7 +261,7 @@ public class MainActivity extends Activity {
             if (convertView == null) {
                 convertView = View.inflate(getBaseContext(), R.layout.grid_item, null);
             }
-            ((TextView) convertView.findViewById(R.id.content)).setText(getItem(position));
+            ((TextView) convertView.findViewById(R.id.content)).setText(getItem(position).text);
             convertView.setTag(Integer.valueOf(position));
             return convertView;
         }
@@ -228,6 +275,14 @@ public class MainActivity extends Activity {
                 return;
             }
             mData.set(newPos, mData.set(oldPos, mData.get(newPos)));
+        }
+
+        public List<Data> getData() {
+            return mData;
+        }
+
+        public void setData(List<Data> data) {
+            this.mData = data;
         }
     }
 

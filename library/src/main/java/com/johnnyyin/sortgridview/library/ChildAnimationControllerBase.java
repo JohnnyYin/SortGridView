@@ -12,15 +12,15 @@ public abstract class ChildAnimationControllerBase<T extends AnimationInfo> {
     public abstract static class Builder<T> {
         protected static final int DEFAULT_ANIMATION_DURATION = 1000;
 
-        protected int animationDuration;
         protected int numColumns;
         protected int positionTag;
+        protected long duration;
         protected long startOffset;
         protected Interpolator interpolator;
         protected Animation.AnimationListener animationListener;
 
-        public Builder<T> animationDuration(int animationDuration) {
-            this.animationDuration = animationDuration;
+        public Builder<T> duration(long duration) {
+            this.duration = duration;
             return this;
         }
 
@@ -50,8 +50,8 @@ public abstract class ChildAnimationControllerBase<T extends AnimationInfo> {
         }
 
         protected void checkArgument() {
-            if (animationDuration <= 0) {
-                animationDuration = DEFAULT_ANIMATION_DURATION;
+            if (duration <= 0) {
+                duration = DEFAULT_ANIMATION_DURATION;
             }
             if (numColumns <= 0) {
                 throw new IllegalArgumentException("numColumns can't less than or equal to zero.");
@@ -64,7 +64,7 @@ public abstract class ChildAnimationControllerBase<T extends AnimationInfo> {
     protected final Map<Integer, AnimationInfo> mChildAnimationMap = new HashMap<Integer, AnimationInfo>();
     protected final int mNumColumns;
     protected final int mPositionTag;
-    protected final int mAnimationDuration;
+    protected final long mDuration;
     protected final long mStartOffset;
     protected final Interpolator mInterpolator;
     protected final Animation.AnimationListener mAnimationListener;
@@ -72,7 +72,7 @@ public abstract class ChildAnimationControllerBase<T extends AnimationInfo> {
     protected ChildAnimationControllerBase(Builder builder) {
         this.mNumColumns = builder.numColumns;
         this.mPositionTag = builder.positionTag;
-        this.mAnimationDuration = builder.animationDuration;
+        this.mDuration = builder.duration;
         this.mStartOffset = builder.startOffset;
         this.mInterpolator = builder.interpolator;
         this.mAnimationListener = builder.animationListener;
@@ -97,8 +97,8 @@ public abstract class ChildAnimationControllerBase<T extends AnimationInfo> {
     protected void setupChildAnimation(Animation animation, T animationInfo) {
         if (animation == null)
             return;
-        if (mAnimationDuration > 0)
-            animation.setDuration(mAnimationDuration);
+        if (mDuration > 0)
+            animation.setDuration(mDuration);
         if (animationInfo != null && animationInfo.startOffset > 0) {
             animation.setStartOffset(animationInfo.startOffset);
         } else if (mStartOffset > 0)

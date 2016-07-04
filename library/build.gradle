@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 22
@@ -20,4 +21,23 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+String localBintrayUser = properties.getProperty("bintray.user")
+String localBintrayApikey = properties.getProperty("bintray.apikey")
+
+// 发布到bintray
+publish {
+    bintrayUser = localBintrayUser
+    bintrayKey = localBintrayApikey
+    dryRun = false
+    userOrg = localBintrayUser
+    groupId = 'com.' + localBintrayUser
+    artifactId = 'sortgridview'
+    publishVersion = '1.0.0'
+    desc = '支持排序的GridView'
+    website = 'https://github.com/JohnnyYin/SortGridView'
 }
